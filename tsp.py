@@ -1,51 +1,82 @@
 # Author: Milo Dietrick
 
 from pathlib import Path
-import numpy
+import timeit
+import math
+import itertools
+import random
 
-input_file = str( Path.cwd() / 'tsp_input.txt')
-with open (input_file, "r") as f:
-  data=f.read().split()
-
-num_nodes = data[0]
-data.pop(0)
-print("The number of nodes is:", num_nodes)
-
-b=[]
-i=0
-while i < len(data)-1:
-    a=[int(data[i]), int(data[i+1])]
-    b.append(numpy.array(a))
-    i += 2  
-c = numpy.array(b)
-
-#psuedocode from book
-# p_0 = initial point
-# i = 0
-# while there are still unvisited points:
-#     i = i+1
-#     select p_i to be the closest unvisited point to p_i-1
-#     visit p_i
-#     return to P_0 from P_n-1
+# code for timer found at
+# https://stackoverflow.com/questions/15707056/get-time-of-execution-of-a-block-of-code-in-python-2-7
+# start_time = timeit.default_timer()
+# print("K nearest time:" timeit.default_timer() - start_time)
+def calculate_distance( l1, l2):
+   return pow( pow((l1[0]-l2[0]), 2) + pow((l1[1] - l2[1]),2), .5 ) 
 
 
-initial = c[0]
-best_order = c[0]
-print(best_order)
+# #TESTING POINTS FROM INPUT FILE
+# initial =[[0,0], [10,0], [0,5], [10,5]]
+
+
+#GENERATE RANDOM POINTS
+initial=[]
+for i in range (16):
+  a = [random.randint(1,11), random.randint(1,11)]
+  initial.append(a)
+
+
+c=initial.copy()
+#NEAREST NEIGHBHOR HEURISTIC
+best_order = [initial[0]]
 total_distance = 0.0
-print(c)
-while len(c) > 1:
-    numpy.append(best_order, c[0])
 
+print("\n order before nearest tsp: ", initial)
+
+j=0
+# length = len(b) -2
+initial.pop(0)
+
+start_time = timeit.default_timer()
+while len(initial) > 0:
     #calculate the closest point
-    dist = []
-    for i in range(1, len(c)):
-        dist.append( numpy.linalg.norm(initial-c[i]) )
-    shortest_dist = min(dist)
-    total_distance += shortest_dist
+    dist = []    
+    for i in initial:
+        dist.append (calculate_distance( best_order[j], i)) #calculate distance     
+    total_distance += min(dist)  
+    best_order.append(initial[dist.index(min(dist))]) #find the point with the shortest distance   
 
-    #put the point with the shortest distance into best_order
+    if len(initial) == 1: #if its the last iteration add the starting point to the end of the list
+        total_distance += calculate_distance(best_order[0], initial[0])
+        best_order.append(best_order[0])
+    initial.pop(dist.index(min(dist)))
+    j+=1 
+end_time = timeit.default_timer() - start_time
+print("\n K_nearest \n total distance", total_distance)
+print("best order", best_order)
+print("K nearest time:", end_time)
 
-    print(shortest_dist)
-    c = numpy.delete(c,(0),axis = 0)
-print(best_order)
+
+#EXHAUSTIVE
+initial = c[0]
+c.pop(0)
+dist = []
+y = []
+
+start_time = timeit.default_timer()
+for x in itertools.permutations(c,len(c)):
+  total_distance = 0
+  x=list(x)
+  x.insert(0, initial)
+  x.insert(len(x), initial)
+  for i in range (len(x) - 1):
+    distance = calculate_distance(x[i], x[i+1])
+    total_distance += distance
+  dist.append(total_distance)
+  y.append(x)
+end_time = timeit.default_timer() - start_time
+print("\n Exhaustive approach")
+print("Best order: ", y[dist.index(min(dist))])
+print("Shortest dsitance",  min(dist))
+print("Exhaustive time:", end_time)
+  
+    
